@@ -140,6 +140,27 @@
 
   .stitch{border:none;border-top:1.5px dashed var(--line);margin:18px 0;}
 
+  .compare-line{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);}
+  .compare-line:last-child{border-bottom:none;}
+  .compare-line .lbl{font-size:13px;color:var(--ink-soft);}
+  .compare-right{display:flex;align-items:center;gap:8px;}
+  .compare-right .val{font-family:'Fraunces',serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;}
+  .delta{
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
+    padding:2px 7px;border-radius:99px;display:flex;align-items:center;gap:2px;
+  }
+  .delta.up.good{background:var(--emerald-soft);color:var(--emerald);}
+  .delta.up.bad{background:var(--wine-soft);color:var(--wine);}
+  .delta.down.good{background:var(--emerald-soft);color:var(--emerald);}
+  .delta.down.bad{background:var(--wine-soft);color:var(--wine);}
+  .delta.flat{background:var(--paper);color:var(--ink-faint);border:1px solid var(--line);}
+
+  .detail-line{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line);}
+  .detail-line:last-child{border-bottom:none;}
+  .detail-line .lbl{font-size:13px;color:var(--ink-soft);}
+  .detail-line .val{font-family:'Fraunces',serif;font-size:15px;font-weight:600;text-align:right;}
+  .detail-line .sub{display:block;font-family:'Inter';font-size:11px;font-weight:400;color:var(--ink-faint);margin-top:2px;}
+
   #alert-card{background:var(--wine-soft);border-color:var(--wine);padding:14px 16px;}
   .alert-inner{display:flex;align-items:center;gap:10px;color:var(--wine);}
   .alert-inner svg{flex-shrink:0;}
@@ -316,6 +337,21 @@
       <div class="cat-row" id="cat-breakdown"></div>
     </div>
 
+    <div class="card">
+      <h2>Comparado con el mes anterior</h2>
+      <div id="compare-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>Ingresos por categoría</h2>
+      <div class="cat-row" id="income-cat-breakdown"></div>
+    </div>
+
+    <div class="card">
+      <h2>Detalles del mes</h2>
+      <div id="detail-list"></div>
+    </div>
+
   </div>
 
   <!-- ===== VIEW: SIMULADOR ===== -->
@@ -343,7 +379,7 @@
 
 </div>
 
-<footer>siganme en ig @fabbzxa</footer>
+<footer>hecho a mano, guardado en tu iPhone</footer>
 
 <script>
 const CATS = {
@@ -556,32 +592,116 @@ function render(){
   hist.innerHTML = '';
   if(monthTx.length === 0){
     hist.innerHTML = '<div class="empty"><span>Aún no hay movimientos</span>Agrega tu primer ingreso o gasto arriba</div>';
-    return;
-  }
-  const byDay = {};
-  monthTx.forEach(t => { (byDay[t.date] = byDay[t.date] || []).push(t); });
-  Object.keys(byDay).sort((a,b)=>b.localeCompare(a)).forEach(day => {
-    const d = new Date(day + 'T00:00:00');
-    const label = document.createElement('div');
-    label.className = 'day-label';
-    label.textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
-    hist.appendChild(label);
-    byDay[day].forEach(t => {
-      const row = document.createElement('div');
-      row.className = 'tx';
-      row.innerHTML = `
-        <span class="tx-dot ${t.type}"></span>
-        <div class="tx-mid">
-          <div class="tx-cat">${t.category}</div>
-          ${t.note ? `<div class="tx-note">${t.note}</div>` : ''}
-        </div>
-        <span class="tx-amt ${t.type}">${t.type==='income'?'+':'−'} ${fmt(t.amount)}</span>
-        <button class="tx-del" aria-label="Eliminar">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>`;
-      row.querySelector('.tx-del').onclick = () => deleteTx(t.id);
-      hist.appendChild(row);
+  } else {
+    const byDay = {};
+    monthTx.forEach(t => { (byDay[t.date] = byDay[t.date] || []).push(t); });
+    Object.keys(byDay).sort((a,b)=>b.localeCompare(a)).forEach(day => {
+      const d = new Date(day + 'T00:00:00');
+      const label = document.createElement('div');
+      label.className = 'day-label';
+      label.textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+      hist.appendChild(label);
+      byDay[day].forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'tx';
+        row.innerHTML = `
+          <span class="tx-dot ${t.type}"></span>
+          <div class="tx-mid">
+            <div class="tx-cat">${t.category}</div>
+            ${t.note ? `<div class="tx-note">${t.note}</div>` : ''}
+          </div>
+          <span class="tx-amt ${t.type}">${t.type==='income'?'+':'−'} ${fmt(t.amount)}</span>
+          <button class="tx-del" aria-label="Eliminar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>`;
+        row.querySelector('.tx-del').onclick = () => deleteTx(t.id);
+        hist.appendChild(row);
+      });
     });
+  }
+
+  // Ingresos por categoría
+  const incTotals = {};
+  monthTx.filter(t=>t.type==='income').forEach(t => { incTotals[t.category] = (incTotals[t.category]||0) + t.amount; });
+  const incEntries = Object.entries(incTotals).sort((a,b)=>b[1]-a[1]);
+  const incWrap = $('income-cat-breakdown');
+  incWrap.innerHTML = '';
+  if(incEntries.length === 0){
+    incWrap.innerHTML = '<p class="empty" style="padding:6px 0;">Sin ingresos registrados este mes</p>';
+  } else {
+    const maxInc = incEntries[0][1];
+    incEntries.forEach(([cat, amt]) => {
+      const div = document.createElement('div');
+      div.className = 'cat-item';
+      div.innerHTML = `<div class="cat-top"><span class="name">${cat}</span><span class="amt">${fmt(amt)}</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${(amt/maxInc)*100}%;background:var(--emerald)"></div></div>`;
+      incWrap.appendChild(div);
+    });
+  }
+
+  // Comparación con el mes anterior
+  const prevDate = new Date(state.viewDate.getFullYear(), state.viewDate.getMonth()-1, 1);
+  const pk = monthKey(prevDate);
+  const prevTx = state.transactions.filter(t => t.date.slice(0,7) === pk);
+  const prevIncome = prevTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const prevExpense = prevTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const prevBalance = prevIncome - prevExpense;
+
+  const compareRows = [
+    {label:'Ingresos', curr: income, prev: prevIncome, higherIsGood:true},
+    {label:'Gastos', curr: expense, prev: prevExpense, higherIsGood:false},
+    {label:'Balance', curr: balance, prev: prevBalance, higherIsGood:true}
+  ];
+  const compareWrap = $('compare-list');
+  if(prevTx.length === 0){
+    compareWrap.innerHTML = '<p class="empty" style="padding:6px 0;">No hay datos de ' + MONTHS[prevDate.getMonth()] + ' para comparar</p>';
+  } else {
+    compareWrap.innerHTML = '';
+    compareRows.forEach(r => {
+      let deltaHtml;
+      if(r.prev === 0 && r.curr === 0){
+        deltaHtml = `<span class="delta flat">sin cambio</span>`;
+      } else if(r.prev === 0){
+        deltaHtml = `<span class="delta up ${r.higherIsGood?'good':'bad'}">nuevo</span>`;
+      } else {
+        const pct = Math.round(((r.curr - r.prev) / Math.abs(r.prev)) * 100);
+        const isUp = pct >= 0;
+        const isGood = isUp === r.higherIsGood || pct === 0;
+        deltaHtml = `<span class="delta ${isUp?'up':'down'} ${pct===0?'flat':(isGood?'good':'bad')}">${isUp?'↑':'↓'} ${Math.abs(pct)}%</span>`;
+      }
+      const row = document.createElement('div');
+      row.className = 'compare-line';
+      row.innerHTML = `<span class="lbl">${r.label}</span>
+        <div class="compare-right"><span class="val">${fmt(r.curr)}</span>${deltaHtml}</div>`;
+      compareWrap.appendChild(row);
+    });
+  }
+
+  // Detalles del mes
+  const now = new Date();
+  const isCurrentMonth = mk === monthKey(now);
+  const daysInMonth = new Date(state.viewDate.getFullYear(), state.viewDate.getMonth()+1, 0).getDate();
+  const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
+  const dailyAvg = expense > 0 ? expense / daysElapsed : 0;
+  const projection = dailyAvg * daysInMonth;
+
+  let biggestExpense = null;
+  monthTx.filter(t=>t.type==='expense').forEach(t => {
+    if(!biggestExpense || t.amount > biggestExpense.amount) biggestExpense = t;
+  });
+
+  const detailWrap = $('detail-list');
+  detailWrap.innerHTML = '';
+  const details = [
+    {lbl:'Promedio de gasto diario', val: fmt(dailyAvg), sub: daysElapsed + ' días considerados'},
+    {lbl: isCurrentMonth ? 'Proyección a fin de mes' : 'Gasto total del mes', val: fmt(isCurrentMonth ? projection : expense), sub: isCurrentMonth ? 'si mantienes este ritmo' : ''},
+    {lbl:'Gasto más grande', val: biggestExpense ? fmt(biggestExpense.amount) : '—', sub: biggestExpense ? biggestExpense.category + (biggestExpense.note ? ' · ' + biggestExpense.note : '') : 'sin gastos este mes'}
+  ];
+  details.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'detail-line';
+    row.innerHTML = `<span class="lbl">${d.lbl}</span><span class="val">${d.val}${d.sub ? `<span class="sub">${d.sub}</span>` : ''}</span>`;
+    detailWrap.appendChild(row);
   });
 }
 
