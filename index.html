@@ -6,27 +6,28 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Finanzas">
-<meta name="theme-color" content="#F6F4EF">
+<meta name="theme-color" content="#0B1420">
+<meta name="color-scheme" content="dark">
 <title>Finanzas — tu balance del mes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,480;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#F6F4EF;
-    --paper-raised:#FFFFFF;
-    --ink:#1E2A24;
-    --ink-soft:#66766C;
-    --ink-faint:#9AA69C;
-    --line:#E1DACB;
-    --emerald:#2F6F52;
-    --emerald-soft:#E4EEE7;
-    --gold:#B8933D;
-    --gold-soft:#F3ECD8;
-    --wine:#7C3A4D;
-    --wine-soft:#F1E3E6;
+    --paper:#0B1420;
+    --paper-raised:#131F30;
+    --ink:#E8EEF5;
+    --ink-soft:#8DA0B8;
+    --ink-faint:#55677D;
+    --line:#223247;
+    --emerald:#3E85C4;
+    --emerald-soft:#182A3D;
+    --gold:#CDA25E;
+    --gold-soft:#26201388;
+    --wine:#C4677C;
+    --wine-soft:#2E1B22;
     --radius:18px;
-    --shadow:0 1px 2px rgba(30,42,36,0.04), 0 8px 24px -12px rgba(30,42,36,0.12);
+    --shadow:0 1px 2px rgba(0,0,0,0.35), 0 10px 28px -14px rgba(0,0,0,0.6);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -39,6 +40,7 @@
     min-height:100vh;
   }
   .wrap{max-width:520px;margin:0 auto;padding:0 18px;}
+  .hidden{display:none !important;}
 
   /* Header */
   header{padding:28px 18px 8px;max-width:520px;margin:0 auto;}
@@ -150,6 +152,14 @@
     border:none;border-top:1.5px dashed var(--line);margin:18px 0;
   }
 
+  /* Alert */
+  #alert-card{
+    background:var(--wine-soft);border-color:var(--wine);padding:14px 16px;
+  }
+  .alert-inner{display:flex;align-items:center;gap:10px;color:var(--wine);}
+  .alert-inner svg{flex-shrink:0;}
+  .alert-inner span{font-size:13.5px;font-weight:500;line-height:1.35;}
+
   .cat-row{display:flex;flex-direction:column;gap:12px;}
   .cat-item .cat-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
   .cat-item .cat-top .name{color:var(--ink);font-weight:500;}
@@ -214,6 +224,46 @@
 
 <div class="wrap">
 
+  <!-- Report -->
+  <div class="card">
+    <h2>Reporte del mes</h2>
+    <div class="report-top">
+      <div class="ring-wrap">
+        <svg width="132" height="132" viewBox="0 0 132 132">
+          <circle cx="66" cy="66" r="56" fill="none" stroke="#223247" stroke-width="12"/>
+          <circle id="ring-fg" cx="66" cy="66" r="56" fill="none" stroke="#3E85C4" stroke-width="12" stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-pct" id="ring-pct">0%</div>
+          <div class="ring-sub">ahorrado</div>
+        </div>
+      </div>
+      <div class="stat-list">
+        <div class="stat-line"><span class="lbl">Ingresos</span><span class="val income" id="stat-income">S/ 0.00</span></div>
+        <div class="stat-line"><span class="lbl">Gastos</span><span class="val expense" id="stat-expense">S/ 0.00</span></div>
+        <div class="stat-line"><span class="lbl">Balance</span><span class="val" id="stat-balance">S/ 0.00</span></div>
+      </div>
+    </div>
+
+    <hr class="stitch">
+    <h2 style="margin-bottom:12px;">Gastos por categoría</h2>
+    <div class="cat-row" id="cat-breakdown"></div>
+  </div>
+
+  <!-- Alert banner -->
+  <div class="card hidden" id="alert-card">
+    <div class="alert-inner">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span id="alert-text">Has alcanzado el 65% de tus ingresos en gastos.</span>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h2>Movimientos</h2>
+    <div id="history"></div>
+  </div>
+
   <!-- Add transaction -->
   <div class="card">
     <h2>Nuevo movimiento</h2>
@@ -243,41 +293,9 @@
     <button class="save-btn income" id="save-btn">Guardar ingreso</button>
   </div>
 
-  <!-- Report -->
-  <div class="card">
-    <h2>Reporte del mes</h2>
-    <div class="report-top">
-      <div class="ring-wrap">
-        <svg width="132" height="132" viewBox="0 0 132 132">
-          <circle cx="66" cy="66" r="56" fill="none" stroke="#E1DACB" stroke-width="12"/>
-          <circle id="ring-fg" cx="66" cy="66" r="56" fill="none" stroke="#2F6F52" stroke-width="12" stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
-        </svg>
-        <div class="ring-center">
-          <div class="ring-pct" id="ring-pct">0%</div>
-          <div class="ring-sub">ahorrado</div>
-        </div>
-      </div>
-      <div class="stat-list">
-        <div class="stat-line"><span class="lbl">Ingresos</span><span class="val income" id="stat-income">S/ 0.00</span></div>
-        <div class="stat-line"><span class="lbl">Gastos</span><span class="val expense" id="stat-expense">S/ 0.00</span></div>
-        <div class="stat-line"><span class="lbl">Balance</span><span class="val" id="stat-balance">S/ 0.00</span></div>
-      </div>
-    </div>
-
-    <hr class="stitch">
-    <h2 style="margin-bottom:12px;">Gastos por categoría</h2>
-    <div class="cat-row" id="cat-breakdown"></div>
-  </div>
-
-  <!-- History -->
-  <div class="card">
-    <h2>Movimientos</h2>
-    <div id="history"></div>
-  </div>
-
 </div>
 
-<footer>Sigueme en ig @fabbzxa</footer>
+<footer>sigueke en ig @fabbzxa</footer>
 
 <script>
 const CATS = {
@@ -286,6 +304,7 @@ const CATS = {
 };
 const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DAYS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const SPEND_ALERT_THRESHOLD = 0.65;
 
 let state = {
   type: 'income',
@@ -332,7 +351,7 @@ function setType(type){
 
 document.querySelectorAll('.type-btn').forEach(b => b.onclick = () => setType(b.dataset.type));
 
-async function loadData(){
+function loadData(){
   try{
     const raw = localStorage.getItem('finanzas_transactions');
     state.transactions = raw ? JSON.parse(raw) : [];
@@ -342,7 +361,7 @@ async function loadData(){
   render();
 }
 
-async function persist(){
+function persist(){
   try{
     localStorage.setItem('finanzas_transactions', JSON.stringify(state.transactions));
   }catch(e){
@@ -350,7 +369,7 @@ async function persist(){
   }
 }
 
-$('save-btn').onclick = async () => {
+$('save-btn').onclick = () => {
   const amount = parseFloat($('amount').value);
   if(!amount || amount <= 0){ $('amount').focus(); return; }
   const tx = {
@@ -362,17 +381,54 @@ $('save-btn').onclick = async () => {
     date: $('date').value || todayISO()
   };
   state.transactions.push(tx);
-  await persist();
+  persist();
   $('amount').value = '';
   $('note').value = '';
   $('date').value = todayISO();
   render();
 };
 
-async function deleteTx(id){
+function deleteTx(id){
   state.transactions = state.transactions.filter(t => t.id !== id);
-  await persist();
+  persist();
   render();
+}
+
+if(typeof Notification !== 'undefined' && Notification.permission === 'default'){
+  // En iOS solo funciona si la app fue agregada a la pantalla de inicio.
+  Notification.requestPermission().catch(()=>{});
+}
+
+function checkSpendAlert(mk, income, expense){
+  const alertCard = $('alert-card');
+  const alertText = $('alert-text');
+  if(income <= 0 || expense / income < SPEND_ALERT_THRESHOLD){
+    alertCard.classList.add('hidden');
+    return;
+  }
+  const pct = Math.round((expense/income)*100);
+  const msg = pct >= 100
+    ? `Ya gastaste el ${pct}% de tus ingresos de este mes. Te pasaste del total.`
+    : `Llevas gastado el ${pct}% de tus ingresos de este mes (umbral: 65%).`;
+  alertText.textContent = msg;
+  alertCard.classList.remove('hidden');
+
+  const flagKey = 'finanzas_alert_sent_' + mk;
+  if(!localStorage.getItem(flagKey)){
+    localStorage.setItem(flagKey, '1');
+    sendNotification(msg);
+  }
+}
+
+function sendNotification(msg){
+  if(typeof Notification === 'undefined') return;
+  if(Notification.permission === 'granted'){
+    try{
+      new Notification('Alerta de gastos', { body: msg });
+    }catch(e){
+      console.error('No se pudo mostrar la notificación', e);
+    }
+  }
 }
 
 function monthKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
@@ -400,10 +456,12 @@ function render(){
   $('stat-balance').textContent = fmt(balance);
   $('stat-balance').className = 'val ' + (balance >= 0 ? 'income' : 'expense');
 
+  checkSpendAlert(mk, income, expense);
+
   const circumference = 351.86;
   const offset = circumference - (rate/100)*circumference;
   $('ring-fg').style.strokeDashoffset = offset;
-  $('ring-fg').setAttribute('stroke', balance >= 0 ? '#2F6F52' : '#7C3A4D');
+  $('ring-fg').setAttribute('stroke', balance >= 0 ? '#3E85C4' : '#C4677C');
   $('ring-pct').textContent = Math.round(rate) + '%';
 
   const catTotals = {};
@@ -438,7 +496,7 @@ function render(){
     label.className = 'day-label';
     label.textContent = DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
     hist.appendChild(label);
-    byDay[day].sort((a,b)=>0).forEach(t => {
+    byDay[day].forEach(t => {
       const row = document.createElement('div');
       row.className = 'tx';
       row.innerHTML = `
